@@ -25,7 +25,7 @@ app.post('/login',async(req,res)=>{
             const token = jwt.sign({documentId},JWT_SECRET);
             console.log(token);
             if(res.status(201)){
-                return res.send({status:'ok',data:token})
+                return res.send({status:'ok',data:{token,oldUser}})
             }else{
                 return res.send({status:'error'})
             }
