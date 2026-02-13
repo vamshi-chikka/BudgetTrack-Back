@@ -1,0 +1,23 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "BudgetTracker",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "",
+  "type": "module",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "cron": "^4.4.0",
+    "dotenv": "^17.2.4",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.1.6",
+    "nodemailer": "^8.0.1",
+    "nodemon": "^3.1.11"
+  }
+}
