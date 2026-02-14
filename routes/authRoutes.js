@@ -16,7 +16,7 @@ app.post('/login',async(req,res)=>{
         return res.status(400).json({message:"All fields are requied"})
     }
     try{
-        const oldUser = await User.findOne({email:email})
+        const oldUser = await User.findOne({email:email.toLowerCase()})
         if(!oldUser){
             return res.send({status:error,data:"User doesn't exists"})
         }
