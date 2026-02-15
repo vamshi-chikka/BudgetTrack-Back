@@ -4,11 +4,14 @@ import protectRoute from '../middleware/protectRoute.js'
 import mongoose from 'mongoose';
 const app = express.Router();
 
-
 app.get('/summary', protectRoute, async (req, res) => {
   try {
+    const page = req.query.page || 1;
+    const limit = req.query.limit || 5;
+    const skip = (page -1) *limit;
+
     const userId = new mongoose.Types.ObjectId(req.user._id);
-    const allData = await Addtran.find({userId:userId});
+    const allData = await Addtran.find({userId:userId}).limit(limit).skip(skip);
     console.log(allData)
     const result = await Addtran.aggregate([
       {
@@ -38,7 +41,9 @@ app.get('/summary', protectRoute, async (req, res) => {
         allData,
         totalIncome,
         totalExpense,
-        balance: totalIncome + totalExpense
+        balance: totalIncome + totalExpense,
+        currentPage: page,
+        totalPages:Math.ceil(allData.length / limit)
       }
     });
 
