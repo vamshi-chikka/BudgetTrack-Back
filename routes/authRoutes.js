@@ -17,8 +17,8 @@ app.post('/login',async(req,res)=>{
     }
     try{
         const oldUser = await User.findOne({email:email.toLowerCase()})
-        if(!oldUser){
-            return res.send({status:error,data:"User doesn't exists"})
+        if(!oldUser || !oldUser.isVerified){
+            return res.send({status:'error',data:"Invalid User Credentials "})
         }
         const documentId = oldUser._id;
         if(await bcrypt.compare(password,oldUser.password)){
@@ -38,17 +38,17 @@ app.post('/login',async(req,res)=>{
 
 app.post('/register',async (req,res)=>{
     const {name,email,mobile,password} = req.body;
-    console.log(req.body)
     if(!name || !email || !mobile || !password){
         return res.send({status:error,data:"All fields are Mandatory"})
     }
     try{
-        const oldUser = await User.findOne({email:email})
-        if(oldUser){ 
-            return res.send({data:'User already exists!!!'})
+        const lowerCaseEmail = email.toLowerCase();
+        const oldUser = await User.findOne({email:lowerCaseEmail})
+        if(oldUser && oldUser.isVerified){
+            return res.send({status:'error',data:"User already exists!!"})
         }
-        const encryptedPassword = await bcrypt.hash(password,10);
         const otp = Math.floor(100000 + Math.random() * 900000);
+        const encryptedPassword = await bcrypt.hash(password,10);
         await User.findOneAndUpdate({email},{
                 name:name,
                 email:email,
@@ -57,15 +57,15 @@ app.post('/register',async (req,res)=>{
                 otp:otp,
                 otpExpiresAt: Date.now() + 10*60*1000, //10 mins
         },{
-            upsert:true
+            upsert:true, new :true
         });
         await transporter.sendMail({
             from :process.env.EMAIL_USER,
-            to:email,
+            to:lowerCaseEmail,
             subject:'Verify your email',
             text:`Your Verification code is ${otp}`
         });
-        res.send({status:'ok',data:"User created Successfully"})
+        res.send({status:'ok',data:"Otp sent to your email successfully!!"})
     }catch(error){
         res.send({status:'error',data:error})
         console.log(error)
@@ -76,7 +76,7 @@ app.post('/verifyEmail',async(req,res)=>{
     const {email,otp} = req.body;
     console.log(req.body)
     try{
-        const oldUser = await User.findOne({email:email});
+        const oldUser = await User.findOne({email:email.toLowerCase()});
         if(!oldUser){
             return res.send({status:'error',message:'User doesnot exists!!'})
         }
@@ -86,17 +86,14 @@ app.post('/verifyEmail',async(req,res)=>{
         if(oldUser.otpExpiresAt <Date.now()){
             return res.send({status:'error',message:'OTP has expired'})
         }
-        await User.create({
-                name: oldUser.name,
-                email:oldUser.email,
-                mobile:oldUser.mobile,
-                password:oldUser.password,
-                isVerified:true
-        })
+        oldUser.isVerified = true;
+        oldUser.otp = null;
+        oldUser.otpExpiresAt = null;
+        await oldUser.save();
         res.send({status:'ok',message:'Email verified Successfully'})
 
     }catch(error){
-        res.send({status:'error',message:'OTP invaild'})
+        res.send({status:'error',message:'OTP invalid'})
     }
 })
 export default app;
